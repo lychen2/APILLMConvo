@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-LLM Chat</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header Section -->
+        <header class="header">
+            <h1 id="title">Multi-LLM Chat</h1>
+            <div id="provider-info" class="provider-info">No model selected</div>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="controls-left">
+                <label for="model-select" id="select-model-label">Select Model:</label>
+                <select id="model-select" class="modern-select">
+                    <option value="">Select a model...</option>
+                </select>
+
+                <label for="language-select" id="language-label">Language:</label>
+                <select id="language-select" class="modern-select">
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ja">日本語</option>
+                    <option value="es">Español</option>
+                </select>
+            </div>
+
+            <div class="controls-right">
+                <button id="switch-model-btn" class="btn btn-primary">Switch Model</button>
+                <button id="manage-providers-btn" class="btn btn-info">Manage Providers</button>
+                <button id="change-baseurl-btn" class="btn btn-secondary">Change Base URL</button>
+                <button id="clear-history-btn" class="btn btn-warning">Clear History</button>
+                <button id="status-btn" class="btn btn-success">Status</button>
+                <button id="help-btn" class="btn btn-dark">Help</button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <span id="conversation-history-label">Conversation History</span>
+            </div>
+            <div id="chat-history" class="chat-history"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-container">
+                <label id="input-label" class="input-label">✏️ Send Message:</label>
+                <div class="input-controls">
+                    <textarea id="message-input" class="message-input" placeholder="Type your message here..." rows="3"></textarea>
+                    <button id="send-btn" class="btn btn-send">🚀 Send</button>
+                </div>
+                <div class="input-hint">💡 Press Ctrl+Enter to send</div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span id="status-text">Ready</span>
+        </div>
+    </div>
+
+    <!-- Modal for Status/Help/Provider Management -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Provider Management Modal -->
+    <div id="provider-modal" class="modal">
+        <div class="modal-content provider-modal-content">
+            <span class="close" id="provider-close">&times;</span>
+            <h2 id="manage-providers-title">Manage Providers</h2>
+            <div class="provider-management">
+                <div class="provider-form">
+                    <h3 id="form-title">Add New Provider</h3>
+                    <form id="provider-form">
+                        <div class="form-group">
+                            <label for="provider-name" id="provider-name-label">Provider Name:</label>
+                            <input type="text" id="provider-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="provider-api-key" id="provider-api-key-label">API Key:</label>
+                            <input type="password" id="provider-api-key" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="provider-model" id="provider-model-label">Model:</label>
+                            <input type="text" id="provider-model" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="provider-description" id="provider-description-label">Description:</label>
+                            <input type="text" id="provider-description">
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary" id="save-provider-btn">Save Provider</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-provider-btn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="provider-list">
+                    <h3 id="existing-providers-title">Existing Providers</h3>
+                    <div id="providers-table"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
