@@ -29,7 +29,7 @@ It's important to mention that a significant portion of this application's code 
 ### Installation
 1.  **Download the files** to your computer:
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/lychen2/APILLMConvo
     # or download and extract the ZIP file
     ```
 
