@@ -64,7 +64,11 @@ All API calls are proxied through https://api.laozhang.ai`,
         'change_base_url': 'Change Base URL',
         'enter_new_base_url': 'Enter new base URL (current: {}):',
         'invalid_url_format': 'Invalid URL format. Please enter a valid URL.',
-        'base_url_changed': 'Base URL changed to: {}'
+        'base_url_changed': 'Base URL changed to: {}',
+        'set_api_key_all': 'Set API Key for All',
+        'enter_api_key_all': 'Enter API key to set for all providers:',
+        'api_key_set_all': 'API key has been set for all providers',
+        'api_key_required': 'API key is required'
     },
     'zh': {
         'title': '多模型聊天助手',
@@ -130,7 +134,11 @@ Markdown支持：
         'change_base_url': '更改基础URL',
         'enter_new_base_url': '输入新的基础URL（当前：{}）：',
         'invalid_url_format': 'URL格式无效。请输入有效的URL。',
-        'base_url_changed': '基础URL已更改为：{}'
+        'base_url_changed': '基础URL已更改为：{}',
+        'set_api_key_all': '为所有设置API密钥',
+        'enter_api_key_all': '输入要为所有提供商设置的API密钥：',
+        'api_key_set_all': '已为所有提供商设置API密钥',
+        'api_key_required': '需要API密钥'
     },
     'fr': {
         'title': 'Chat Multi-LLM',
@@ -196,7 +204,11 @@ Tous les appels API sont acheminés via https://api.laozhang.ai`,
         'change_base_url': 'Changer l\'URL de base',
         'enter_new_base_url': 'Entrez la nouvelle URL de base (actuelle: {}):',
         'invalid_url_format': 'Format d\'URL invalide. Veuillez entrer une URL valide.',
-        'base_url_changed': 'URL de base changée vers: {}'
+        'base_url_changed': 'URL de base changée vers: {}',
+        'set_api_key_all': 'Définir la clé API pour tous',
+        'enter_api_key_all': 'Entrez la clé API à définir pour tous les fournisseurs:',
+        'api_key_set_all': 'La clé API a été définie pour tous les fournisseurs',
+        'api_key_required': 'La clé API est requise'
     },
     'de': {
         'title': 'Multi-LLM Chat',
@@ -262,7 +274,11 @@ Alle API-Aufrufe werden über https://api.laozhang.ai weitergeleitet`,
         'change_base_url': 'Basis-URL ändern',
         'enter_new_base_url': 'Neue Basis-URL eingeben (aktuell: {}):',
         'invalid_url_format': 'Ungültiges URL-Format. Bitte geben Sie eine gültige URL ein.',
-        'base_url_changed': 'Basis-URL geändert zu: {}'
+        'base_url_changed': 'Basis-URL geändert zu: {}',
+        'set_api_key_all': 'API-Schlüssel für alle setzen',
+        'enter_api_key_all': 'Geben Sie den API-Schlüssel ein, der für alle Anbieter gesetzt werden soll:',
+        'api_key_set_all': 'API-Schlüssel wurde für alle Anbieter gesetzt',
+        'api_key_required': 'API-Schlüssel ist erforderlich'
     },
     'ja': {
         'title': 'マルチLLMチャット',
@@ -328,7 +344,11 @@ Markdownサポート：
         'change_base_url': 'ベースURL変更',
         'enter_new_base_url': '新しいベースURLを入力してください（現在：{}）：',
         'invalid_url_format': '無効なURL形式です。有効なURLを入力してください。',
-        'base_url_changed': 'ベースURLが次に変更されました：{}'
+        'base_url_changed': 'ベースURLが次に変更されました：{}',
+        'set_api_key_all': 'すべてのAPIキーを設定',
+        'enter_api_key_all': 'すべてのプロバイダーに設定するAPIキーを入力してください：',
+        'api_key_set_all': 'すべてのプロバイダーにAPIキーが設定されました',
+        'api_key_required': 'APIキーが必要です'
     },
     'es': {
         'title': 'Chat Multi-LLM',
@@ -394,7 +414,11 @@ Todas las llamadas a la API se realizan a través de https://api.laozhang.ai`,
         'change_base_url': 'Cambiar URL base',
         'enter_new_base_url': 'Ingrese nueva URL base (actual: {}):',
         'invalid_url_format': 'Formato de URL inválido. Por favor ingrese una URL válida.',
-        'base_url_changed': 'URL base cambiada a: {}'
+        'base_url_changed': 'URL base cambiada a: {}',
+        'set_api_key_all': 'Establecer clave API para todos',
+        'enter_api_key_all': 'Ingrese la clave API para establecer en todos los proveedores:',
+        'api_key_set_all': 'Se ha establecido la clave API para todos los proveedores',
+        'api_key_required': 'Se requiere clave API'
     }
 };
 

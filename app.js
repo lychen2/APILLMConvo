@@ -248,6 +248,18 @@ class MultiLLMChat {
         return null;
     }
 
+    setApiKeyForAll(apiKey) {
+        const config = this.getAllProviders();
+        for (const [name, providerConfig] of Object.entries(config)) {
+            config[name].api_key = apiKey;
+        }
+        localStorage.setItem('llmConfig', JSON.stringify(config));
+        
+        // Reload all providers with new API key
+        this.loadConfig();
+        return true;
+    }
+
     setBaseUrl(newBaseUrl) {
         // Update all existing providers with new base URL
         for (const [name, provider] of this.providers.entries()) {
@@ -360,7 +372,7 @@ class MultiLLMChatGUI {
             providerInfo: document.getElementById('provider-info'),
             modelSelect: document.getElementById('model-select'),
             languageSelect: document.getElementById('language-select'),
-            switchModelBtn: document.getElementById('switch-model-btn'),
+            setApiKeyAllBtn: document.getElementById('set-api-key-all-btn'),
             manageProvidersBtn: document.getElementById('manage-providers-btn'),
             changeBaseUrlBtn: document.getElementById('change-baseurl-btn'),
             clearHistoryBtn: document.getElementById('clear-history-btn'),
@@ -396,13 +408,13 @@ class MultiLLMChatGUI {
             this.changeLanguage(e.target.value);
         });
 
-        // Model selection
+        // Model selection - automatically switch when changed
         this.elements.modelSelect.addEventListener('change', () => {
-            this.updateProviderDisplay();
+            this.switchProvider();
         });
 
         // Button events
-        this.elements.switchModelBtn.addEventListener('click', () => this.switchProvider());
+        this.elements.setApiKeyAllBtn.addEventListener('click', () => this.setApiKeyForAll());
         this.elements.manageProvidersBtn.addEventListener('click', () => this.showProviderManagement());
         this.elements.changeBaseUrlBtn.addEventListener('click', () => this.changeBaseUrl());
         this.elements.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
@@ -503,7 +515,7 @@ class MultiLLMChatGUI {
         });
 
         // Update buttons
-        this.elements.switchModelBtn.textContent = this.languageManager.getText('switch_model');
+        this.elements.setApiKeyAllBtn.textContent = this.languageManager.getText('set_api_key_all');
         this.elements.manageProvidersBtn.textContent = this.languageManager.getText('manage_providers');
         this.elements.changeBaseUrlBtn.textContent = this.languageManager.getText('change_base_url');
         this.elements.clearHistoryBtn.textContent = this.languageManager.getText('clear_history');
@@ -552,6 +564,18 @@ class MultiLLMChatGUI {
             this.updateProviderDisplay();
             const message = this.languageManager.getText('switched_to_model').replace('{}', selectedProvider.toUpperCase());
             this.addToHistory(message, 'system');
+        }
+    }
+
+    setApiKeyForAll() {
+        const apiKey = prompt(this.languageManager.getText('enter_api_key_all'));
+        if (apiKey && apiKey.trim()) {
+            this.chatApp.setApiKeyForAll(apiKey.trim());
+            this.addToHistory(this.languageManager.getText('api_key_set_all'), 'system');
+            this.refreshModelSelect();
+            this.updateProviderDisplay();
+        } else if (apiKey !== null) {
+            alert(this.languageManager.getText('api_key_required'));
         }
     }
 

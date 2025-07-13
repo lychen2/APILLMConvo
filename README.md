@@ -29,7 +29,7 @@ It's important to mention that a significant portion of this application's code 
 ### Installation
 1.  **Download the files** to your computer:
     ```bash
-    git clone https://github.com/lychen2/APILLMConvo
+    git clone https://github.com/lychen2/APILLMConvo.git
     # or download and extract the ZIP file
     ```
 
@@ -40,7 +40,8 @@ It's important to mention that a significant portion of this application's code 
 1.  **Configure API Providers**:
     - Click the "Manage Providers" button in the interface
     - Add your API keys for the models you want to use
-    - Configure model names and descriptions as needed
+    - Configure descriptions as needed (model names are predefined)
+    - Use "Set API Key for All" to quickly apply the same key to all providers
 
 2.  **Select a Model**:
     - Use the dropdown menu to select your preferred AI model
@@ -53,13 +54,18 @@ It's important to mention that a significant portion of this application's code 
 
 ## 🔧 Configuration
 
-### Adding Custom Models
-1. Click "Manage Providers" in the interface
-2. Fill in the provider details:
-   - **Provider Name**: A unique identifier for your model
-   - **API Key**: Your authentication key
-   - **Model**: The exact model name (e.g., "gpt-4", "claude-3-sonnet")
+### Managing API Keys
+1. **Individual Setup**: Click "Manage Providers" to add or edit API keys for specific models
+2. **Bulk Setup**: Use "Set API Key for All" to quickly apply the same API key to all providers
+3. **Provider Details**:
+   - **Provider Name**: Predefined model identifiers (cannot be modified through UI)
+   - **API Key**: Your authentication key for the service
    - **Description**: Optional description for easy identification
+
+### Model Selection
+- Models are predefined in the application (Gemini, GPT, Claude variants)
+- Simply select from the dropdown to switch instantly between models
+- No additional switching steps required - selection is immediate
 
 ### Changing Base URL
 - Click "Change Base URL" to set up a custom API endpoint
@@ -85,8 +91,8 @@ llm_js/
 **app.js** contains several important classes:
 - `APIConfig`: Manages API configuration and endpoints
 - `UnifiedLLMProvider`: Handles communication with different AI services
-- `MultiLLMChat`: Core chat functionality and conversation management
-- `MultiLLMChatGUI`: User interface management and event handling
+- `MultiLLMChat`: Core chat functionality, conversation management, and bulk API key operations
+- `MultiLLMChatGUI`: User interface management, instant model switching, and event handling
 - `MarkdownRenderer`: Processes and displays formatted AI responses
 - `LanguageManager`: Handles multi-language support
 
