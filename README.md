@@ -73,10 +73,10 @@ It's important to mention that a significant portion of this application's code 
 
 ```
 llm_js/
-├── index.html          # Main application interface
+├── index.html         # Main application interface
 ├── app.js             # Core application logic and classes
 ├── translations.js    # Multi-language support
-├── styles.css         # Modern UI styling
+├── styles.css         # UI styling
 └── README.md          # This documentation
 ```
 
