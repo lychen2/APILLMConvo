@@ -16,22 +16,41 @@ class UnifiedLLMProvider {
         this.config = config;
     }
 
-    async chat(message, conversationHistory = [], imageUrl = null) {
+    async chat(message, conversationHistory = [], imageUrl = null, onStreamData = null) {
         const headers = {
             "Authorization": `Bearer ${this.config.apiKey}`,
             "Content-Type": "application/json"
         };
 
-        const isImageModel = this.config.model.includes('image');
+        const isImageModel = this.config.model.includes('image') || this.config.model.includes('flux');
+        const isFluxModel = this.config.model.includes('flux');
         const requestBody = {
             model: this.config.model,
             max_tokens: 4096,
             temperature: 0.7,
-            stream: false
+            stream: onStreamData ? true : false
         };
 
         if (isImageModel) {
-            requestBody.messages = [{ role: "user", content: message }];
+            if (isFluxModel) {
+                // Flux model expects messages array with content as string
+                requestBody.messages = [{ role: "user", content: message }];
+            } else {
+                // GPT image model with base64 image support
+                const userMessage = { role: "user", content: [] };
+                if (message) {
+                    userMessage.content.push({ type: "text", text: message });
+                }
+                if (imageUrl) {
+                    // Handle base64 images for GPT models
+                    if (imageUrl.startsWith('data:image')) {
+                        userMessage.content.push({ type: "image_url", image_url: imageUrl });
+                    } else {
+                        userMessage.content.push({ type: "image_url", image_url: { url: imageUrl } });
+                    }
+                }
+                requestBody.messages = [userMessage];
+            }
         } else {
             const messages = [...conversationHistory];
             const userMessage = { role: "user", content: [] };
@@ -55,6 +74,50 @@ class UnifiedLLMProvider {
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Handle streaming response
+            if (onStreamData && response.body) {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullContent = '';
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6).trim();
+                                if (data === '[DONE]') {
+                                    return fullContent;
+                                }
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
+                                        const content = parsed.choices[0].delta.content || '';
+                                        if (content) {
+                                            fullContent += content;
+                                            onStreamData(content);
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Skip invalid JSON
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    reader.releaseLock();
+                }
+                
+                return fullContent;
             }
 
             const result = await response.json();
@@ -154,6 +217,16 @@ class MultiLLMChat {
                 "api_key": "your_api_key_here",
                 "model": "claude-sonnet-4-20250514",
                 "description": "claude-sonnet-4-20250514"
+            },
+            "gpt-4o-image": {
+                "api_key": "your_api_key_here",
+                "model": "gpt-4o-image",
+                "description": "GPT-4o with image generation capabilities"
+            },
+            "flux-kontext-pro": {
+                "api_key": "your_api_key_here",
+                "model": "flux-kontext-pro",
+                "description": "Flux Kontext Pro image generation model"
             }
         };
 
@@ -189,14 +262,14 @@ class MultiLLMChat {
         return false;
     }
 
-    async chat(message, imageUrl = null) {
+    async chat(message, imageUrl = null, onStreamData = null) {
         if (!this.currentProvider) {
             return "Please select an LLM provider first";
         }
 
         const sanitizedMessage = message.replace(/\s+/g, ' ').trim();
         const provider = this.providers.get(this.currentProvider);
-        const response = await provider.chat(sanitizedMessage, [...this.conversationHistory], imageUrl);
+        const response = await provider.chat(sanitizedMessage, [...this.conversationHistory], imageUrl, onStreamData);
 
         const userMessageContent = [];
         if (sanitizedMessage) {
@@ -706,7 +779,12 @@ class MultiLLMChatGUI {
 
     async sendMessage() {
         const message = this.elements.messageInput.value.trim();
-        const imageUrl = this.elements.imagePreview.src.startsWith('data:image') ? this.elements.imagePreview.src : null;
+        let imageUrl = null;
+        
+        // Handle image preview for upload
+        if (this.elements.imagePreview.src.startsWith('data:image')) {
+            imageUrl = this.elements.imagePreview.src;
+        }
 
         if (!message && !imageUrl || this.isGenerating) {
             return;
@@ -719,8 +797,29 @@ class MultiLLMChatGUI {
         this.setGeneratingState(true);
 
         try {
-            const response = await this.chatApp.chat(message, imageUrl);
-            this.addToHistory(response, 'assistant');
+            // Check if current provider supports streaming
+            const isStreamingSupported = true; // Most modern APIs support streaming
+            
+            if (isStreamingSupported) {
+                // Create a placeholder for streaming response
+                const assistantMessageId = 'assistant-' + Date.now();
+                this.addToHistory('', 'assistant', null, null, assistantMessageId);
+                
+                let streamedContent = '';
+                const onStreamData = (chunk) => {
+                    streamedContent += chunk;
+                    this.updateStreamingMessage(assistantMessageId, streamedContent);
+                };
+                
+                const response = await this.chatApp.chat(message, imageUrl, onStreamData);
+                
+                // Final update with complete response
+                this.updateStreamingMessage(assistantMessageId, response);
+            } else {
+                // Fallback to non-streaming
+                const response = await this.chatApp.chat(message, imageUrl);
+                this.addToHistory(response, 'assistant');
+            }
         } catch (error) {
             const errorMsg = `${this.languageManager.getText('error')}: ${error.message}`;
             this.addToHistory(errorMsg, 'error');
@@ -740,9 +839,12 @@ class MultiLLMChatGUI {
         }
     }
 
-    addToHistory(content, role, provider = null, imageUrl = null) {
+    addToHistory(content, role, provider = null, imageUrl = null, messageId = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
+        if (messageId) {
+            messageDiv.id = messageId;
+        }
 
         let prefix = '';
         let className = '';
@@ -797,7 +899,7 @@ class MultiLLMChatGUI {
                 break;
         }
 
-        messageDiv.innerHTML = `<span class="${className}">${prefix}</span>${contentHtml}`;
+        messageDiv.innerHTML = `<span class="${className}">${prefix}</span><div class="message-content">${contentHtml}</div>`;
         this.elements.chatHistory.appendChild(messageDiv);
         this.scrollToBottom();
     }
@@ -991,6 +1093,42 @@ class MultiLLMChatGUI {
             this.elements.modelSelect.value = providers[0];
             this.updateProviderDisplay();
         }
+    }
+
+    updateStreamingMessage(messageId, content) {
+        const messageDiv = document.getElementById(messageId);
+        if (messageDiv) {
+            const contentDiv = messageDiv.querySelector('.message-content');
+            if (contentDiv) {
+                // Handle different content types
+                if (Array.isArray(content)) {
+                    let contentHtml = '';
+                    content.forEach(part => {
+                        if (part.type === 'text') {
+                            contentHtml += MarkdownRenderer.renderMarkdown(part.text);
+                        } else if (part.type === 'image_url' && part.image_url && part.image_url.url) {
+                            contentHtml += `<br><img src="${part.image_url.url}" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`;
+                        }
+                    });
+                    contentDiv.innerHTML = contentHtml;
+                } else if (typeof content === 'string') {
+                    const imageUrlRegex = /(https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|webp))/ig;
+                    const textAndImageParts = content.split(imageUrlRegex);
+                    
+                    const contentHtml = textAndImageParts.map((part, index) => {
+                        if (index % 2 === 1) {
+                            return `<br><img src="${part}" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`;
+                        } else {
+                            return MarkdownRenderer.renderMarkdown(part);
+                        }
+                    }).join('');
+                    contentDiv.innerHTML = contentHtml;
+                } else if (content) {
+                    contentDiv.innerHTML = this.escapeHtml(JSON.stringify(content));
+                }
+            }
+        }
+        this.scrollToBottom();
     }
 
     changeBaseUrl() {

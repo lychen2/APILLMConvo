@@ -211,6 +211,12 @@ body {
     font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
 }
 
+/* Message content wrapper */
+.message-content {
+    display: inline-block;
+    margin-left: 0;
+}
+
 /* Message styles */
 .message {
     margin-bottom: 15px;
