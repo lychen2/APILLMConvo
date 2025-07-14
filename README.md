@@ -40,7 +40,7 @@ It's important to mention that a significant portion of this application's code 
 1.  **Configure API Providers**:
     - Click the "Manage Providers" button in the interface
     - Add your API keys for the models you want to use
-    - Configure descriptions as needed (model names are predefined)
+    - Configure descriptions and models as needed
     - Use "Set API Key for All" to quickly apply the same key to all providers
 
 2.  **Select a Model**:
@@ -65,7 +65,6 @@ It's important to mention that a significant portion of this application's code 
 ### Model Selection
 - Models are predefined in the application (Gemini, GPT, Claude variants)
 - Simply select from the dropdown to switch instantly between models
-- No additional switching steps required - selection is immediate
 
 ### Changing Base URL
 - Click "Change Base URL" to set up a custom API endpoint
