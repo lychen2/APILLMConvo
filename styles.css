@@ -330,6 +330,46 @@ body {
     align-items: stretch;
 }
 
+#image-upload-btn {
+    padding: 0 12px;
+    font-size: 1.5em;
+}
+
+.image-preview-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+#image-preview {
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.message-assistant img {
+    max-width: 100%;
+    border-radius: var(--border-radius);
+    margin-top: 10px;
+}
+
 .message-input {
     flex: 1;
     padding: 8px;

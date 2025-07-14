@@ -57,7 +57,13 @@
                 <label id="input-label" class="input-label">✏️ Send Message:</label>
                 <div class="input-controls">
                     <textarea id="message-input" class="message-input" placeholder="Type your message here..." rows="3"></textarea>
+                    <input type="file" id="image-input" accept="image/*" style="display: none;">
+                    <button id="image-upload-btn" class="btn btn-secondary">🖼️</button>
                     <button id="send-btn" class="btn btn-send">🚀 Send</button>
+                </div>
+                <div id="image-preview-container" class="image-preview-container" style="display: none;">
+                    <img id="image-preview" src="#" alt="Image preview"/>
+                    <button id="remove-image-btn" class="btn-remove-image">&times;</button>
                 </div>
                 <div class="input-hint">💡 Press Ctrl+Enter to send</div>
             </div>

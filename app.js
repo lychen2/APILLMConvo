@@ -16,28 +16,41 @@ class UnifiedLLMProvider {
         this.config = config;
     }
 
-    async chat(message, conversationHistory = []) {
+    async chat(message, conversationHistory = [], imageUrl = null) {
         const headers = {
             "Authorization": `Bearer ${this.config.apiKey}`,
             "Content-Type": "application/json"
         };
 
-        const messages = [...conversationHistory];
-        messages.push({ role: "user", content: message });
-
-        const data = {
+        const isImageModel = this.config.model.includes('image');
+        const requestBody = {
             model: this.config.model,
-            messages: messages,
-            max_tokens: 2000,
+            max_tokens: 4096,
             temperature: 0.7,
             stream: false
         };
+
+        if (isImageModel) {
+            requestBody.messages = [{ role: "user", content: message }];
+        } else {
+            const messages = [...conversationHistory];
+            const userMessage = { role: "user", content: [] };
+
+            if (message) {
+                userMessage.content.push({ type: "text", text: message });
+            }
+            if (imageUrl) {
+                userMessage.content.push({ type: "image_url", image_url: { url: imageUrl } });
+            }
+            messages.push(userMessage);
+            requestBody.messages = messages;
+        }
 
         try {
             const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify(data)
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -45,7 +58,31 @@ class UnifiedLLMProvider {
             }
 
             const result = await response.json();
-            return result.choices[0].message.content;
+
+            if (isImageModel) {
+                if (result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content) {
+                    const content = result.choices[0].message.content;
+                    const imageUrlRegex = /!\[.*?\]\((.*?)\)/;
+                    const match = content.match(imageUrlRegex);
+                    if (match && match[1]) {
+                        return [{ type: "image_url", image_url: { url: match[1] } }];
+                    }
+                }
+                
+                if (result.data && Array.isArray(result.data) && result.data[0].url) {
+                    return [{ type: "image_url", image_url: { url: result.data[0].url } }];
+                }
+                
+                return "Image generation failed or returned unexpected format.";
+
+            } else {
+                if (result.choices && result.choices[0].message) {
+                    return result.choices[0].message.content;
+                } else {
+                    return "Unsupported response format from API";
+                }
+            }
+
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('fetch')) {
                 return `${this.config.provider} Network error: Unable to connect to API`;
@@ -152,16 +189,24 @@ class MultiLLMChat {
         return false;
     }
 
-    async chat(message) {
+    async chat(message, imageUrl = null) {
         if (!this.currentProvider) {
             return "Please select an LLM provider first";
         }
 
         const sanitizedMessage = message.replace(/\s+/g, ' ').trim();
         const provider = this.providers.get(this.currentProvider);
-        const response = await provider.chat(sanitizedMessage, [...this.conversationHistory]);
+        const response = await provider.chat(sanitizedMessage, [...this.conversationHistory], imageUrl);
 
-        this.conversationHistory.push({ role: "user", content: sanitizedMessage });
+        const userMessageContent = [];
+        if (sanitizedMessage) {
+            userMessageContent.push({ type: 'text', text: sanitizedMessage });
+        }
+        if (imageUrl) {
+            userMessageContent.push({ type: 'image_url', image_url: { url: imageUrl } });
+        }
+
+        this.conversationHistory.push({ role: "user", content: userMessageContent });
         this.conversationHistory.push({
             role: "assistant",
             content: response,
@@ -387,6 +432,13 @@ class MultiLLMChatGUI {
             modalBody: document.getElementById('modal-body'),
             closeModal: document.querySelector('.close'),
             
+            // Image elements
+            imageInput: document.getElementById('image-input'),
+            imageUploadBtn: document.getElementById('image-upload-btn'),
+            imagePreviewContainer: document.getElementById('image-preview-container'),
+            imagePreview: document.getElementById('image-preview'),
+            removeImageBtn: document.getElementById('remove-image-btn'),
+
             // Provider management elements
             providerModal: document.getElementById('provider-modal'),
             providerClose: document.getElementById('provider-close'),
@@ -421,6 +473,11 @@ class MultiLLMChatGUI {
         this.elements.statusBtn.addEventListener('click', () => this.showStatus());
         this.elements.helpBtn.addEventListener('click', () => this.showHelp());
         this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
+
+        // Image events
+        this.elements.imageUploadBtn.addEventListener('click', () => this.elements.imageInput.click());
+        this.elements.imageInput.addEventListener('change', (e) => this.handleImageSelected(e));
+        this.elements.removeImageBtn.addEventListener('click', () => this.removeImage());
 
         // Input events
         this.elements.messageInput.addEventListener('keydown', (e) => {
@@ -627,7 +684,18 @@ class MultiLLMChatGUI {
             const content = msg.content || '';
 
             if (role === 'user') {
-                this.addToHistory(content, 'user');
+               let text = '';
+               let imageUrl = null;
+               if(Array.isArray(content)) {
+                   content.forEach(part => {
+                       if (part.type === 'text') text = part.text;
+                       if (part.type === 'image_url' && part.image_url) imageUrl = part.image_url.url;
+                   });
+               } else {
+                   text = content; 
+               }
+               this.addToHistory(text, 'user', null, imageUrl);
+
             } else if (role === 'assistant') {
                 this.addToHistory(content, 'assistant', msg.provider);
             }
@@ -638,17 +706,20 @@ class MultiLLMChatGUI {
 
     async sendMessage() {
         const message = this.elements.messageInput.value.trim();
-        if (!message || this.isGenerating) {
+        const imageUrl = this.elements.imagePreview.src.startsWith('data:image') ? this.elements.imagePreview.src : null;
+
+        if (!message && !imageUrl || this.isGenerating) {
             return;
         }
 
-        this.addToHistory(message, 'user');
+        this.addToHistory(message, 'user', null, imageUrl);
         this.elements.messageInput.value = '';
+        this.removeImage();
         this.updateStatus('generating');
         this.setGeneratingState(true);
 
         try {
-            const response = await this.chatApp.chat(message);
+            const response = await this.chatApp.chat(message, imageUrl);
             this.addToHistory(response, 'assistant');
         } catch (error) {
             const errorMsg = `${this.languageManager.getText('error')}: ${error.message}`;
@@ -669,41 +740,64 @@ class MultiLLMChatGUI {
         }
     }
 
-    addToHistory(text, role, provider = null) {
+    addToHistory(content, role, provider = null, imageUrl = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
 
         let prefix = '';
         let className = '';
+        let contentHtml = '';
 
         switch (role) {
             case 'user':
                 prefix = `${this.languageManager.getText('you')}: `;
                 className = 'message-user';
+                contentHtml = this.escapeHtml(content);
+                if (imageUrl) {
+                    contentHtml += `<br><img src="${imageUrl}" style="max-width: 200px; border-radius: 5px; margin-top: 5px;">`;
+                }
                 break;
             case 'assistant':
                 const providerName = provider ? provider.toUpperCase() : 'AI';
                 prefix = `${providerName}: `;
                 className = 'message-assistant';
+                
+                if (Array.isArray(content)) {
+                    content.forEach(part => {
+                        if (part.type === 'text') {
+                            contentHtml += MarkdownRenderer.renderMarkdown(part.text);
+                        } else if (part.type === 'image_url' && part.image_url && part.image_url.url) {
+                            contentHtml += `<br><img src="${part.image_url.url}" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`;
+                        }
+                    });
+                } else if (typeof content === 'string') {
+                    const imageUrlRegex = /(https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|webp))/ig;
+                    const textAndImageParts = content.split(imageUrlRegex);
+                    
+                    contentHtml = textAndImageParts.map((part, index) => {
+                        if (index % 2 === 1) {
+                            return `<br><img src="${part}" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`;
+                        } else {
+                            return MarkdownRenderer.renderMarkdown(part);
+                        }
+                    }).join('');
+                } else if (content) {
+                    contentHtml = this.escapeHtml(JSON.stringify(content));
+                }
                 break;
             case 'system':
                 prefix = `${this.languageManager.getText('system')}: `;
                 className = 'message-system';
+                contentHtml = this.escapeHtml(content);
                 break;
             case 'error':
                 prefix = `${this.languageManager.getText('error')}: `;
                 className = 'message-error';
+                contentHtml = this.escapeHtml(content);
                 break;
         }
 
-        if (role === 'assistant') {
-            // Render markdown for assistant messages
-            messageDiv.innerHTML = `<span class="${className}">${prefix}</span>${MarkdownRenderer.renderMarkdown(text)}`;
-        } else {
-            // Plain text for other messages
-            messageDiv.innerHTML = `<span class="${className}">${prefix}</span>${this.escapeHtml(text)}`;
-        }
-
+        messageDiv.innerHTML = `<span class="${className}">${prefix}</span>${contentHtml}`;
         this.elements.chatHistory.appendChild(messageDiv);
         this.scrollToBottom();
     }
@@ -720,6 +814,24 @@ class MultiLLMChatGUI {
 
     updateStatus(key) {
         this.elements.statusText.textContent = this.languageManager.getText(key);
+    }
+
+    handleImageSelected(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.elements.imagePreview.src = e.target.result;
+                this.elements.imagePreviewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    removeImage() {
+        this.elements.imageInput.value = ''; // Reset file input
+        this.elements.imagePreview.src = '#';
+        this.elements.imagePreviewContainer.style.display = 'none';
     }
 
     // Provider Management Methods
