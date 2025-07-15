@@ -314,6 +314,7 @@ body {
     border: 3px solid var(--success);
     border-radius: var(--border-radius);
     padding: 3px;
+    position: relative;
 }
 
 .input-container {
@@ -342,16 +343,22 @@ body {
 }
 
 .image-preview-container {
-    position: relative;
-    display: inline-block;
-    margin-top: 10px;
+    position: absolute;
+    top: -60px;
+    left: 10px;
+    z-index: 10;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 #image-preview {
-    max-width: 100px;
-    max-height: 100px;
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
+    max-width: 60px;
+    max-height: 60px;
+    border-radius: 4px;
+    display: block;
 }
 
 .btn-remove-image {
