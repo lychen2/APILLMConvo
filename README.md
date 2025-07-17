@@ -70,6 +70,9 @@ It's important to mention that a significant portion of this application's code 
 - Click "Change Base URL" to set up a custom API endpoint
 - Default proxy: `https://api.laozhang.ai/v1`
 
+  
+**⚠️ Important Note:** The default API proxy is for demonstration purposes only. It is **not recommended** for use, and its security or reliability is not guaranteed. Please use your own trusted API proxy.
+
 ### Language Settings
 - Use the language dropdown to switch interface languages
 - Settings are automatically saved and restored between sessions
